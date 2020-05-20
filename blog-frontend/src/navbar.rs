@@ -2,6 +2,7 @@ use std::future::Future;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+use yew::utils::host;
 
 use crate::api::BlogInfo;
 use crate::errors::*;
@@ -85,17 +86,18 @@ impl Component for Navbar {
             _ => {}
         }
         html! {
-            <nav>
-                <div class="nav-wrapper">
-                    <a href="#" class="brand-logo">{ msg }</a>
-                    <a href="#" data-target="mobile-demo" class="sidenav-trigger"><i class="material-icons">{"menu"}</i></a>
-                    <ul class="right hide-on-med-and-down">
-                        <li><a href="/recent">{"Recent Posts"}</a></li>
+            <nav class = "uk-navbar-container uk-margin">
+                <div class="uk-navbar-left">
+                    <a href="#" class="uk-navbar-item uk-logo">
+                        <div><img width="50" height="50" src=&format!("http://{}/static/images/mathion-logo.png", host().unwrap())></img></div>
+                        <div id="blog-logo-text">{msg}</div>
+                    </a>
+                    <ul class="uk-navbar-nav">
+                        <li>
+                            <a href="/recent">{"Recent Posts"}</a>
+                        </li>
                     </ul>
                 </div>
-                <ul class="sidenav" id="mobile-nav">
-                    <li><a href="/recent">{"Recent Posts"}</a></li>
-                </ul>
             </nav>
         }
     }
