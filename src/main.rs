@@ -4,14 +4,23 @@ extern crate actix_web;
 extern crate serde;
 extern crate serde_derive;
 extern crate toml;
+extern crate sha3;
+extern crate hex;
+extern crate jwt_simple;
+extern crate hmac;
+
+#[macro_use]
+extern crate diesel;
 
 #[macro_use]
 extern crate lazy_static;
 
 mod api;
 mod config;
+mod middlewares;
+mod db;
 
-use actix_web::{web, get, App, HttpResponse, HttpServer};
+use actix_web::{web, App, HttpResponse, HttpServer};
 use std::sync::Arc;
 
 use config::Config;
@@ -48,6 +57,9 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .service(api::info)
+            .service(api::register)
+            .service(api::login)
+            .service(api::user_info)
             .service(actix_files::Files::new("/static", STATIC_PATH))
             .default_service(web::get().to(index))
     })
