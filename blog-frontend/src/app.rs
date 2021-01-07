@@ -1,10 +1,12 @@
 use crate::api::*;
-use crate::errors::FetchError;
+
 use crate::footer::Footer;
 use crate::navbar::Navbar;
-use crate::pages::Main;
-use crate::pages::Register;
+use crate::pages::Accounts;
 use crate::pages::Login;
+use crate::pages::Main;
+use crate::pages::Posts;
+use crate::pages::Register;
 use crate::route::AppRoute;
 use crate::services::*;
 use yew::prelude::*;
@@ -16,17 +18,15 @@ pub struct Model {
     cookie_service: CookieService,
     route: Route<()>,
     link: ComponentLink<Self>,
-    info: FetchState<BlogInfo>,
-    user_info: FetchState<UserInfo>,
+    info: FetchState<Info>,
+    tmp_info: Info,
 }
 
 pub enum Msg {
     RouteChanged(Route<()>),
     ChangeRoute(AppRoute),
-    SetInfoFetchState(FetchState<BlogInfo>),
-    SetUserInfoFetchState(FetchState<UserInfo>),
+    SetInfoFetchState(FetchState<Info>),
     GetInfo,
-    GetUserInfo,
     GetLogout,
 }
 
@@ -53,7 +53,7 @@ impl Component for Model {
             route,
             link,
             info: FetchState::NotFetching,
-            user_info: FetchState::NotFetching,
+            tmp_info: Info::default(),
         }
     }
 
@@ -61,27 +61,17 @@ impl Component for Model {
         match msg {
             Msg::SetInfoFetchState(state) => {
                 self.info = state;
-                true
-            },
-            Msg::SetUserInfoFetchState(state) => {
-                self.user_info = state;
-                true
-            },
-            Msg::GetUserInfo => {
-                let future = async {
-                    match AuthService::new().get_user().await {
-                        Ok(info) => Msg::SetUserInfoFetchState(FetchState::Success(info)),
-                        Err(err) => Msg::SetUserInfoFetchState(FetchState::Failed(err)),
+                match &self.info {
+                    FetchState::Success(fetched) => {
+                        self.tmp_info = fetched.clone();
+                        true
                     }
-                };
-                send_future(self.link.clone(), future);
-                self.link
-                    .send_message(Msg::SetUserInfoFetchState(FetchState::Fetching));
-                false
+                    _ => false,
+                }
             }
             Msg::GetInfo => {
                 let future = async {
-                    match BlogInfo::new().await {
+                    match AuthService::new().get().await {
                         Ok(info) => Msg::SetInfoFetchState(FetchState::Success(info)),
                         Err(err) => Msg::SetInfoFetchState(FetchState::Failed(err)),
                     }
@@ -90,22 +80,23 @@ impl Component for Model {
                 self.link
                     .send_message(Msg::SetInfoFetchState(FetchState::Fetching));
                 false
-            },
+            }
             Msg::GetLogout => {
                 self.cookie_service.remove("token");
-                self.link.send_message(Msg::GetUserInfo);
+                self.link.send_message(Msg::GetInfo);
+                self.link.send_message(Msg::ChangeRoute(AppRoute::Login));
                 true
-            },
+            }
             Msg::RouteChanged(route) => {
                 self.route = route;
                 true
-            },
+            }
             Msg::ChangeRoute(route) => {
-                self.link.send_message(Msg::GetUserInfo);
+                self.link.send_message(Msg::GetInfo);
                 self.route = route.into();
                 self.route_service.set_route(&self.route.route, ());
                 true
-            },
+            }
         }
     }
 
@@ -114,37 +105,24 @@ impl Component for Model {
     }
 
     fn view(&self) -> Html {
-        let mut blog_info = BlogInfo::default();
-        let mut user_info = UserInfo::default();
         match &self.info {
             FetchState::NotFetching => {
                 self.link.send_message(Msg::GetInfo);
-            }
-            FetchState::Success(info) => {
-                blog_info = info.clone();
-            }
-            _ => {}
-        }
-        match &self.user_info {
-            FetchState::NotFetching => {
-                self.link.send_message(Msg::GetUserInfo);
-            }
-            FetchState::Success(info) => {
-                user_info = info.clone();
             }
             _ => {}
         }
         html! {
             <>
-            <Navbar info=blog_info.clone() user_info=user_info.clone() link_app=self.link.clone()/>
+            <Navbar info=self.tmp_info.clone() link_app=self.link.clone()/>
             <div style={"padding-top:30px;padding-bottom:30px;"}>
             <ybc::Container>
             {
                 match AppRoute::switch(self.route.clone()) {
-                    Some(AppRoute::Main) => html!{<Main info={blog_info.clone()}/>},
-                    Some(AppRoute::Register) => html!{<Register link_app=self.link.clone()/>},
-                    Some(AppRoute::Login) => html!{<Login link_app=self.link.clone()/>},
-                    Some(AppRoute::Accounts) => VNode::from(""),
+                    Some(AppRoute::Main) => html!{<Main info=self.tmp_info.clone()/>},
+                    Some(AppRoute::Register) => html!{<Register info=self.tmp_info.clone() link_app=self.link.clone()/>},
+                    Some(AppRoute::Login) => html!{<Login info=self.tmp_info.clone() link_app=self.link.clone()/>},
+                    Some(AppRoute::Accounts) => html!{<Accounts info=self.tmp_info.clone() link_app=self.link.clone()/>},
+                    Some(AppRoute::Posts) => html!{<Posts info=self.tmp_info.clone() link_app=self.link.clone()/>},
                     None => VNode::from("404"),
                 }
             }

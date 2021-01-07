@@ -5,11 +5,10 @@ extern crate log;
 #[macro_use]
 extern crate yew_router;
 extern crate mailchecker;
+extern crate web_sys;
 extern crate ybc;
 extern crate yewtil;
-extern crate web_sys;
 
-mod services;
 mod api;
 mod app;
 mod constants;
@@ -18,6 +17,7 @@ mod footer;
 mod navbar;
 mod pages;
 mod route;
+mod services;
 
 use app::Model;
 use wasm_bindgen::prelude::*;

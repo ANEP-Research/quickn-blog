@@ -1,11 +1,11 @@
+use ybc::ImageSize;
 use yew::prelude::*;
 use yew::utils::host;
 
 use crate::api::*;
 use crate::app::{self, Model};
 use crate::route::*;
-use ybc::ImageSize;
-use ybc::NavbarFixed::Top;
+
 use ybc::NavbarItemTag;
 
 pub struct Navbar {
@@ -15,10 +15,7 @@ pub struct Navbar {
 
 #[derive(Properties, Clone, Debug)]
 pub struct Props {
-    #[prop_or_default]
-    pub info: BlogInfo,
-    #[prop_or_default]
-    pub user_info: UserInfo,
+    pub info: Info,
     pub link_app: ComponentLink<Model>,
 }
 
@@ -28,10 +25,7 @@ impl Component for Navbar {
     type Message = Msg;
     type Properties = Props;
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        Self {
-            props,
-            link,
-        }
+        Self { props, link }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
@@ -41,7 +35,7 @@ impl Component for Navbar {
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if self.props.info != props.info || self.props.user_info != props.user_info {
+        if self.props.info != props.info {
             self.props = props;
             true
         } else {
@@ -60,13 +54,18 @@ impl Component for Navbar {
             }
             navstart={
                 html!{
-                    <ybc::NavbarItem tag=NavbarItemTag::A href={&format!("http://{}", host().unwrap())}>
-                        {"Home"}
-                    </ybc::NavbarItem>
+                    <>
+                            <a class="navbar-item" onclick=self.props.link_app.callback(|_| app::Msg::ChangeRoute(AppRoute::Main))>
+                                {"Home"}
+                            </a>
+                            <a class="navbar-item" onclick=self.props.link_app.callback(|_| app::Msg::ChangeRoute(AppRoute::Posts))>
+                                {"Posts"}
+                            </a>
+                    </>
                 }
             }
             navend={
-                if !self.props.user_info.success {
+                if !self.props.info.account_info.success {
                     html!{
                         <>
                             <ybc::NavbarItem>
@@ -83,11 +82,11 @@ impl Component for Navbar {
                     }
                 } else {
                     html! {
-                        <ybc::NavbarItem>
-                            <ybc::Button onclick=self.props.link_app.callback(|_| app::Msg::GetLogout)>
-                                {"Logout"}
-                            </ybc::Button>
-                        </ybc::NavbarItem>
+                        <a class="navbar-item" onclick=self.props.link_app.callback(|_| app::Msg::ChangeRoute(AppRoute::Accounts))>
+                            <ybc::Image size=ImageSize::Is32x32>
+                                <img class="is-rounded" src={&format!("http://{}/static/images/account_circle-black-48dp.svg", host().unwrap())}/>
+                            </ybc::Image>
+                        </a>
                     }
                 }
             }/>

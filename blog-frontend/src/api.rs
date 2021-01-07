@@ -2,6 +2,7 @@ use crate::errors::*;
 use serde_derive::{Deserialize, Serialize};
 use std::fmt;
 use std::future::Future;
+use std::time::SystemTime;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -30,21 +31,24 @@ where
     });
 }
 
-// GET /api/info
+// POST /api/info
+#[derive(Default, Deserialize, Serialize, Debug, Clone, PartialEq)]
+pub struct Info {
+    pub blog_info: BlogInfo,
+    pub account_info: AccountInfo,
+}
+
 #[derive(Default, Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub struct BlogInfo {
     pub blog_name: String,
 }
 
-impl BlogInfo {
-    pub async fn new() -> Result<Self, FetchError> {
-        let res = reqwest::get(&format!("http://{}/api/info", host().unwrap()))
-            .await
-            .unwrap();
-        let text = res.text().await.unwrap();
-        let info: BlogInfo = serde_json::from_str(&text).unwrap();
-        Ok(info)
-    }
+#[derive(Default, Deserialize, Serialize, Debug, Clone, PartialEq)]
+pub struct AccountInfo {
+    pub success: bool,
+    pub pk: Option<i32>,
+    pub username: Option<String>,
+    pub email: Option<String>,
 }
 
 // POST /api/register
@@ -101,7 +105,7 @@ pub enum AccountError {
     UserNotExists,
     PassNotMatched,
     NetworkError(String),
-    DbError(String)
+    DbError(String),
 }
 
 impl fmt::Display for AccountError {
@@ -131,15 +135,73 @@ pub struct AccountResult {
     pub token: Option<String>,
 }
 
-#[derive(Default, Deserialize, Serialize, Debug, Clone, PartialEq)]
-pub struct UserInfo {
-    pub success: bool,
-    pub pk: Option<i32>,
-    pub username: Option<String>,
-    pub email: Option<String>,
-}
-
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub struct TokenRequest {
     pub token: String,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+pub struct GetPosts {
+    pub start: i64,
+    pub limit: i64,
+}
+
+impl GetPosts {
+    pub async fn get(&self) -> Result<PostsResponse, FetchError> {
+        let res = reqwest::get(&format!(
+            "http://{}/api/posts?start={}&limit={}",
+            host().unwrap(),
+            self.start,
+            self.limit
+        ))
+        .await
+        .unwrap();
+        let text = res.text().await.unwrap();
+        let info: PostsResponse = serde_json::from_str(&text).unwrap();
+        Ok(info)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub struct Posts {
+    pub id: i32,
+    pub author: i32,
+    pub title: String,
+    pub body: String,
+    pub created: SystemTime,
+    pub modified: Option<SystemTime>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub struct Author {
+    pub name: String,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+pub struct CreatePost {
+    pub token: String,
+    pub title: String,
+    pub body: String,
+}
+
+impl CreatePost {
+    pub async fn send(&self) -> Result<PostsResponse, FetchError> {
+        let client = reqwest::Client::new();
+        let res = client
+            .post(&format!("http://{}/api/create_post", host().unwrap()))
+            .json(&self)
+            .send()
+            .await
+            .unwrap();
+        let text = res.text().await.unwrap();
+        let info: PostsResponse = serde_json::from_str(&text).unwrap();
+        Ok(info)
+    }
+}
+
+#[derive(Default, Deserialize, Serialize, Debug, Clone, PartialEq)]
+pub struct PostsResponse {
+    pub success: bool,
+    pub error_msg: Option<String>,
+    pub body: Option<Vec<(Posts, Author)>>,
 }

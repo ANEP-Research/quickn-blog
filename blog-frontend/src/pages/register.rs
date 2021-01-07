@@ -3,7 +3,6 @@ use crate::app::{self, Model};
 use crate::route::AppRoute;
 use ybc::InputType;
 use yew::prelude::*;
-use yewtil::NeqAssign;
 
 pub struct Register {
     username: String,
@@ -17,6 +16,7 @@ pub struct Register {
 
 #[derive(Properties, Clone)]
 pub struct Props {
+    pub info: Info,
     pub link_app: ComponentLink<Model>,
 }
 
@@ -95,11 +95,20 @@ impl Component for Register {
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        //self.props.neq_assign(props)
-        false
+        if self.props.info != props.info {
+            self.props.info = props.info;
+            true
+        } else {
+            false
+        }
     }
 
     fn view(&self) -> Html {
+        if self.props.info.account_info.success {
+            self.props
+                .link_app
+                .send_message(app::Msg::ChangeRoute(AppRoute::Accounts));
+        }
         let state = match &self.info {
             FetchState::Failed(e) => Some(AccountError::NetworkError(format!("{}", e))),
             FetchState::Success(res) => {

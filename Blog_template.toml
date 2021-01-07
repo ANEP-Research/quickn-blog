@@ -1,0 +1,7 @@
+[general]
+blog_name = "quickn-blog"
+address = "localhost"
+port = 8080
+database_url = "postgres://quickn:testserver@localhost/quickn_blog"
+[secret]
+token_secret = "quickn-blog"

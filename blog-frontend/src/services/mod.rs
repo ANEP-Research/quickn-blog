@@ -1,5 +1,5 @@
-mod cookie;
 mod auth;
+mod cookie;
 
-pub use cookie::CookieService;
 pub use auth::AuthService;
+pub use cookie::CookieService;

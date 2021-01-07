@@ -18,7 +18,7 @@ impl Component for Footer {
         Self { props, link }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _msg: Self::Message) -> ShouldRender {
         unimplemented!()
     }
 

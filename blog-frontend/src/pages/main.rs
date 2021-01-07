@@ -1,7 +1,5 @@
-use crate::api::BlogInfo;
-use ybc::NavbarFixed::Top;
-use ybc::TileCtx::{Ancestor, Child, Parent};
-use ybc::TileSize::Four;
+use crate::api::*;
+
 use yew::prelude::*;
 use yewtil::NeqAssign;
 
@@ -12,8 +10,7 @@ pub struct Main {
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
-    #[prop_or_default]
-    pub info: BlogInfo,
+    pub info: Info,
 }
 
 pub enum Msg {}
@@ -39,7 +36,7 @@ impl Component for Main {
                 html! {
                     <>
                         <ybc::Title>
-                            {&format!("Welcome to the {}", self.props.info.blog_name)}
+                            {&format!("Welcome to the {}", self.props.info.blog_info.blog_name)}
                         </ybc::Title>
                         <ybc::Subtitle>
                             {"Coming soon"}

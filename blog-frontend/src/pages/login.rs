@@ -2,9 +2,8 @@ use crate::api::*;
 use crate::app::{self, Model};
 use crate::route::AppRoute;
 use crate::services::CookieService;
-use yew::prelude::*;
 use ybc::InputType;
-use yewtil::NeqAssign;
+use yew::prelude::*;
 
 pub struct Login {
     username: String,
@@ -17,6 +16,7 @@ pub struct Login {
 
 #[derive(Properties, Clone)]
 pub struct Props {
+    pub info: Info,
     pub link_app: ComponentLink<Model>,
 }
 
@@ -66,7 +66,7 @@ impl Component for Login {
                 };
                 send_future(self.link.clone(), future);
                 false
-            },
+            }
             Msg::UpdateFetchState(state) => {
                 self.info = state;
                 true
@@ -76,10 +76,20 @@ impl Component for Login {
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         //self.props.neq_assign(props)
-        false
+        if self.props.info != props.info {
+            self.props.info = props.info;
+            true
+        } else {
+            false
+        }
     }
 
     fn view(&self) -> Html {
+        if self.props.info.account_info.success {
+            self.props
+                .link_app
+                .send_message(app::Msg::ChangeRoute(AppRoute::Accounts));
+        }
         let state = match self.info.clone() {
             FetchState::Failed(e) => Some(AccountError::NetworkError(format!("{}", e))),
             FetchState::Success(res) => {
